@@ -43,7 +43,7 @@ ATTRIBUTION = "Data provided by Airparif"
 
 CONF_LOCATIONS = "locations"
 
-SCAN_INTERVAL = timedelta(minutes=5)
+SCAN_INTERVAL = timedelta(hours=6)
 
 TIMEOUT = 10
 
