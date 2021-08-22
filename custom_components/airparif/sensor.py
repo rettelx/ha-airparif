@@ -117,13 +117,13 @@ class AirparifSensor(SensorEntity):
     @property
     def extra_state_attributes(self):
         """Return the state attributes of the last update."""
-        attrs = {}
+        attrs = {"today": {}, "tomorrow": {}}
         if self._data is not None:
             try:
                 for (k, attr) in KEY_TO_ATTR.items():
-                    attrs[attr] = self._data[0][k]
+                    attrs["today"][attr] = self._data[0][k]
                     if len(self._data) == 2:
-                        attrs[f"tomorrow_{attr}"] = self._data[1][k]
+                        attrs["tomorrow"][attr] = self._data[1][k]
                 return attrs
             except (IndexError, KeyError):
                 return {ATTR_ATTRIBUTION: ATTRIBUTION}
