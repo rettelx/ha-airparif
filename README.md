@@ -90,21 +90,24 @@ A sensor is created for each location defined in the configuration.
 For now, the integration provides pollution indexes for the current and the next day:
 
 ```yaml
-date: '2021-08-21'
-tomorrow_date: '2021-08-22'
-pm_2_5: Bon
-tomorrow_pm_2_5: Bon
-pm_10: Bon
-tomorrow_pm_10: Bon
-ozone: Moyen
-tomorrow_ozone: Moyen
-nitrogen_dioxide: Moyen
-tomorrow_nitrogen_dioxide: Moyen
-sulfur_dioxide: Bon
-tomorrow_sulfur_dioxide: Bon
-aqi: Moyen
-tomorrow_aqi: Moyen
-friendly_name: Airparif 75056
+today:
+  date: '2021-08-22'
+  pm_2_5: Bon
+  pm_10: Bon
+  ozone: Moyen
+  nitrogen_dioxide: Bon
+  sulfur_dioxide: Bon
+  aqi: Moyen
+tomorrow:
+  date: '2021-08-23'
+  pm_2_5: Bon
+  pm_10: Bon
+  ozone: Moyen
+  nitrogen_dioxide: Bon
+  sulfur_dioxide: Bon
+  aqi: Moyen
+friendly_name: Airparif 75101
+icon: mdi:cloud
 ```
 
 <!-- ROADMAP -->
