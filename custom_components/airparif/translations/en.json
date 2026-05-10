@@ -1,0 +1,73 @@
+{
+  "config": {
+    "error": {
+      "cannot_connect": "Cannot connect to Airparif.",
+      "invalid_insee": "INSEE code must be 5 digits."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "api_version": {
+        "name": "Airparif API version"
+      },
+      "aqi_today": {
+        "name": "Air Quality Index (today)"
+      },
+      "aqi_tomorrow": {
+        "name": "Air Quality Index (tomorrow)"
+      },
+      "aqi_numeric_today": {
+        "name": "AQI numeric index (today)"
+      },
+      "aqi_numeric_tomorrow": {
+        "name": "AQI numeric index (tomorrow)"
+      },
+      "no2_today": {
+        "name": "Nitrogen dioxide NO₂ (today)"
+      },
+      "no2_tomorrow": {
+        "name": "Nitrogen dioxide NO₂ (tomorrow)"
+      },
+      "o3_today": {
+        "name": "Ozone O₃ (today)"
+      },
+      "o3_tomorrow": {
+        "name": "Ozone O₃ (tomorrow)"
+      },
+      "pm10_today": {
+        "name": "PM10 particles (today)"
+      },
+      "pm10_tomorrow": {
+        "name": "PM10 particles (tomorrow)"
+      },
+      "pm25_today": {
+        "name": "PM2.5 particles (today)"
+      },
+      "pm25_tomorrow": {
+        "name": "PM2.5 particles (tomorrow)"
+      },
+      "so2_today": {
+        "name": "Sulfur dioxide SO₂ (today)"
+      },
+      "so2_tomorrow": {
+        "name": "Sulfur dioxide SO₂ (tomorrow)"
+      }
+    },
+    "binary_sensor": {
+      "pollution_episode_today": {
+        "name": "Pollution episode today",
+        "state": {
+          "on": "Active",
+          "off": "Inactive"
+        }
+      },
+      "pollution_episode_tomorrow": {
+        "name": "Pollution episode tomorrow",
+        "state": {
+          "on": "Active",
+          "off": "Inactive"
+        }
+      }
+    }
+  }
+}

@@ -1,133 +1,165 @@
-"""Support for the Airparif service."""
-import asyncio
-import logging
-from datetime import timedelta
+"""Sensor platform for Airparif."""
 
-import aiohttp
-import homeassistant.helpers.config_validation as cv
-import voluptuous as vol
-from homeassistant.components.sensor import SensorEntity
-from homeassistant.const import (
-    ATTR_ATTRIBUTION,
-    ATTR_DATE,
-    CONF_TOKEN,
+from __future__ import annotations
+
+from homeassistant.components.sensor import SensorEntity, SensorStateClass, ENTITY_ID_FORMAT as SENSOR_ENTITY_ID_FORMAT
+from homeassistant.const import EntityCategory
+from homeassistant.helpers.device_registry import DeviceEntryType
+from homeassistant.helpers.entity import async_generate_entity_id
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
+
+from .const import (
+    DOMAIN,
+    DAY_TODAY,
+    DAY_TOMORROW,
+    ATTR_DAY,
+    ATTR_EPISODE,
+    ATTR_COLOR,
+    ATTR_LABEL,
+    ATTRIBUTION,
+    AQI_COLORS,
+    QUALI_TO_NUM,
+    FIELDS,
+    ICONS,
+    SENSOR_KEYS,
+    NUMERIC_KEYS,
 )
-from homeassistant.exceptions import PlatformNotReady
-from homeassistant.helpers.aiohttp_client import async_get_clientsession
-from homeassistant.helpers.config_validation import PLATFORM_SCHEMA
 
-from .api import AirparifApiClient
 
-_LOGGER = logging.getLogger(__name__)
-
-ATTR_NITROGEN_DIOXIDE = "nitrogen_dioxide"
-ATTR_OZONE = "ozone"
-ATTR_PM10 = "pm_10"
-ATTR_PM2_5 = "pm_2_5"
-ATTR_SULFUR_DIOXIDE = "sulfur_dioxide"
-ATTR_TOMORROW = "tomorrow"
-ATTR_TODAY = "today"
-ATTR_AQI = "aqi"
-ATTR_EPISODE = "episode"
-
-KEY_TO_ATTR = {
-    "date": ATTR_DATE,
-    "pm25": ATTR_PM2_5,
-    "pm10": ATTR_PM10,
-    "o3": ATTR_OZONE,
-    "no2": ATTR_NITROGEN_DIOXIDE,
-    "so2": ATTR_SULFUR_DIOXIDE,
-    "indice": ATTR_AQI,
-    "episode": ATTR_EPISODE
-}
-
-ATTRIBUTION = "Data provided by Airparif"
-
-CONF_LOCATIONS = "locations"
-
-SCAN_INTERVAL = timedelta(hours=6)
-
-TIMEOUT = 10
-
-PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
-    {
-        vol.Required(CONF_TOKEN): cv.string,
-        vol.Required(CONF_LOCATIONS): cv.ensure_list,
+def _device_info(insee: str) -> dict:
+    return {
+        "identifiers": {(DOMAIN, insee)},
+        "name": f"Airparif {insee}",
+        "manufacturer": "Airparif",
+        "model": "Air quality forecast",
+        "entry_type": DeviceEntryType.SERVICE,
+        "configuration_url": "https://www.airparif.fr",
     }
-)
 
 
-async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
-    """Set up the requested Airparif locations."""
-
-    token = config.get(CONF_TOKEN)
-    locations = config.get(CONF_LOCATIONS)
-
-    client = AirparifApiClient(token, async_get_clientsession(hass))
-    dev = []
-    try:
-        for insee in locations:
-            airparif_sensor = AirparifSensor(client, insee)
-            dev.append(airparif_sensor)
-    except (
-            aiohttp.client_exceptions.ClientConnectorError,
-            asyncio.TimeoutError,
-    ) as err:
-        _LOGGER.exception("Failed to connect to Airparif servers")
-        raise PlatformNotReady from err
-    async_add_entities(dev, True)
+def _object_id(*parts: str) -> str:
+    """Build a deterministic object_id (without platform prefix)."""
+    return "_".join(parts).lower()
 
 
-class AirparifSensor(SensorEntity):
-    """Implementation of an Airparif sensor."""
+async def async_setup_entry(hass, entry, async_add_entities):
+    coordinator = hass.data[DOMAIN][entry.entry_id]
+    insee = entry.data["insee"]
 
-    def __init__(self, client, insee):
-        """Initialize the sensor."""
-        self._client = client
+    entities: list[SensorEntity] = []
+
+    for pollutant in FIELDS:
+        for day in (DAY_TODAY, DAY_TOMORROW):
+            ent = AirparifQualitativeSensor(coordinator, insee, pollutant, day)
+            # Suggest readable entity_id: sensor.airparif_<INSEE>_<pollutant>_<day>
+            ent.entity_id = async_generate_entity_id(
+                SENSOR_ENTITY_ID_FORMAT,
+                _object_id("airparif", insee, pollutant, day),
+                hass=hass,
+            )
+            entities.append(ent)
+
+    for day in (DAY_TODAY, DAY_TOMORROW):
+        ent = AirparifAqiNumericSensor(coordinator, insee, day)
+        ent.entity_id = async_generate_entity_id(
+            SENSOR_ENTITY_ID_FORMAT,
+            _object_id("airparif", insee, "aqi_numeric", day),
+            hass=hass,
+        )
+        entities.append(ent)
+
+    ent = AirparifApiVersionSensor(coordinator, insee)
+    ent.entity_id = async_generate_entity_id(
+        SENSOR_ENTITY_ID_FORMAT,
+        _object_id("airparif", insee, "api_version"),
+        hass=hass,
+    )
+    entities.append(ent)
+
+    async_add_entities(entities)
+
+
+class AirparifQualitativeSensor(CoordinatorEntity, SensorEntity):
+    """Qualitative pollutant or AQI sensor (string state)."""
+
+    _attr_has_entity_name = True
+
+    def __init__(self, coordinator, insee: str, pollutant: str, day: str) -> None:
+        super().__init__(coordinator)
         self._insee = insee
-        self._data = None
+        self._pollutant = pollutant
+        self._day = day
+
+        self._attr_unique_id = f"{insee}_{pollutant}_{day}"
+        self._attr_translation_key = SENSOR_KEYS[(pollutant, day)]
+        self._attr_icon = ICONS[pollutant]
 
     @property
-    def name(self):
-        """Return the name of the sensor."""
-        return f"Airparif {self._insee}"
+    def device_info(self) -> dict:
+        return _device_info(self._insee)
 
     @property
-    def icon(self):
-        """Icon to use in the frontend, if any."""
-        return "mdi:blur"
+    def native_value(self):
+        return self.coordinator.data.get(self._day, {}).get(FIELDS[self._pollutant])
 
     @property
-    def state(self):
-        """Return the state of the device."""
-        if self._data is not None and "indice" in self._data[ATTR_TODAY].keys():
-            return self._data["today"]["indice"]
-        else:
-            return None
+    def extra_state_attributes(self) -> dict:
+        label = self.native_value
+        return {
+            ATTR_DAY: self._day,
+            ATTR_EPISODE: self.coordinator.data.get(self._day, {}).get("episode"),
+            ATTR_COLOR: AQI_COLORS.get(label),
+            "attribution": ATTRIBUTION,
+        }
+
+
+class AirparifAqiNumericSensor(CoordinatorEntity, SensorEntity):
+    """Derived numeric AQI sensor (1–6) with qualitative label preserved."""
+
+    _attr_has_entity_name = True
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_icon = "mdi:numeric"
+
+    def __init__(self, coordinator, insee: str, day: str) -> None:
+        super().__init__(coordinator)
+        self._insee = insee
+        self._day = day
+
+        self._attr_unique_id = f"{insee}_aqi_numeric_{day}"
+        self._attr_translation_key = NUMERIC_KEYS[day]
 
     @property
-    def available(self):
-        """Return sensor availability."""
-        return self._data is not None
+    def device_info(self) -> dict:
+        return _device_info(self._insee)
 
     @property
-    def unique_id(self):
-        """Return unique ID."""
-        return self._insee
+    def native_value(self):
+        label = self.coordinator.data.get(self._day, {}).get("indice")
+        return QUALI_TO_NUM.get(label)
 
     @property
-    def extra_state_attributes(self):
-        """Return the state attributes of the last update."""
-        attrs = {ATTR_TODAY: {}, ATTR_TOMORROW: {}, ATTR_ATTRIBUTION: ATTRIBUTION}
-        if self._data is not None:
-            try:
-                for (k, attr) in KEY_TO_ATTR.items():
-                    attrs[ATTR_TODAY][attr] = self._data["today"][k]
-                    attrs[ATTR_TOMORROW][attr] = self._data["tomorrow"][k]
-                return attrs
-            except (IndexError, KeyError):
-                return {ATTR_ATTRIBUTION: ATTRIBUTION}
+    def extra_state_attributes(self) -> dict:
+        label = self.coordinator.data.get(self._day, {}).get("indice")
+        return {ATTR_DAY: self._day, ATTR_LABEL: label, "attribution": ATTRIBUTION}
 
-    async def async_update(self):
-        """Get the latest data and updates the states."""
-        self._data = await self._client.async_get_data(self._insee)
+
+class AirparifApiVersionSensor(CoordinatorEntity, SensorEntity):
+    """Diagnostic sensor exposing the Airparif API version."""
+
+    _attr_has_entity_name = True
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_translation_key = "api_version"
+    _attr_icon = "mdi:api"
+
+    def __init__(self, coordinator, insee: str) -> None:
+        super().__init__(coordinator)
+        self._insee = insee
+        self._attr_unique_id = f"{insee}_api_version"
+
+    @property
+    def device_info(self) -> dict:
+        return _device_info(self._insee)
+
+    @property
+    def native_value(self):
+        return self.coordinator.data.get("version")

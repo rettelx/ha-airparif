@@ -1,0 +1,73 @@
+{
+  "config": {
+    "error": {
+      "cannot_connect": "Impossible de se connecter à Airparif.",
+      "invalid_insee": "Le code INSEE doit contenir 5 chiffres."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "api_version": {
+        "name": "Version de l’API Airparif"
+      },
+      "aqi_today": {
+        "name": "Indice de qualité de l’air (aujourd’hui)"
+      },
+      "aqi_tomorrow": {
+        "name": "Indice de qualité de l’air (demain)"
+      },
+      "aqi_numeric_today": {
+        "name": "Indice AQI numérique (aujourd’hui)"
+      },
+      "aqi_numeric_tomorrow": {
+        "name": "Indice AQI numérique (demain)"
+      },
+      "no2_today": {
+        "name": "Dioxyde d’azote NO₂ (aujourd’hui)"
+      },
+      "no2_tomorrow": {
+        "name": "Dioxyde d’azote NO₂ (demain)"
+      },
+      "o3_today": {
+        "name": "Ozone O₃ (aujourd’hui)"
+      },
+      "o3_tomorrow": {
+        "name": "Ozone O₃ (demain)"
+      },
+      "pm10_today": {
+        "name": "Particules PM10 (aujourd’hui)"
+      },
+      "pm10_tomorrow": {
+        "name": "Particules PM10 (demain)"
+      },
+      "pm25_today": {
+        "name": "Particules PM2.5 (aujourd’hui)"
+      },
+      "pm25_tomorrow": {
+        "name": "Particules PM2.5 (demain)"
+      },
+      "so2_today": {
+        "name": "Dioxyde de soufre SO₂ (aujourd’hui)"
+      },
+      "so2_tomorrow": {
+        "name": "Dioxyde de soufre SO₂ (demain)"
+      }
+    },
+    "binary_sensor": {
+      "pollution_episode_today": {
+        "name": "Épisode de pollution aujourd’hui",
+        "state": {
+          "on": "Actif",
+          "off": "Inactif"
+        }
+      },
+      "pollution_episode_tomorrow": {
+        "name": "Épisode de pollution demain",
+        "state": {
+          "on": "Actif",
+          "off": "Inactif"
+        }
+      }
+    }
+  }
+}
