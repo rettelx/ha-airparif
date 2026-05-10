@@ -1,12 +1,10 @@
 {
   "domain": "airparif",
   "name": "Airparif",
-  "version": "1.0.0",
+  "codeowners": ["@rettelx"],
+  "config_flow": true,
   "documentation": "https://github.com/rettelx/ha-airparif",
   "iot_class": "cloud_polling",
-  "config_flow": true,
-  "codeowners": [
-    "@rettelx"
-  ],
-  "issue_tracker": "https://github.com/rettelx/ha-airparif/issues"
+  "issue_tracker": "https://github.com/rettelx/ha-airparif/issues",
+  "version": "1.0.0"
 }
