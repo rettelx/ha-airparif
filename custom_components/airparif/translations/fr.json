@@ -1,5 +1,15 @@
 {
   "config": {
+    "step": {
+      "user": {
+        "title": "Airparif",
+        "description": "Configure l'intégration Airparif avec votre clé d'API et le code INSEE de votre ville (la plupart du temps différent du code postal).",
+        "data": {
+          "api_key": "Clé d'API",
+          "insee": "Code INSEE"
+        }
+      }
+    },
     "error": {
       "cannot_connect": "Impossible de se connecter à Airparif.",
       "invalid_insee": "Le code INSEE doit contenir 5 chiffres."

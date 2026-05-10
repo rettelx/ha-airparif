@@ -1,5 +1,15 @@
 {
   "config": {
+    "step": {
+      "user": {
+        "title": "Airparif",
+        "description": "Configure Airparif integration with your API key and municipality INSEE code (usually different from postcode).",
+        "data": {
+          "api_key": "API key",
+          "insee": "INSEE code"
+        }
+      }
+    },
     "error": {
       "cannot_connect": "Cannot connect to Airparif.",
       "invalid_insee": "INSEE code must be 5 digits."
