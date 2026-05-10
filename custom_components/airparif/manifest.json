@@ -7,5 +7,6 @@
   "config_flow": true,
   "codeowners": [
     "@rettelx"
-  ]
+  ],
+  "issue_tracker": "https://github.com/rettelx/ha-airparif/issues"
 }
