@@ -64,5 +64,9 @@ class AirparifEpisodeBinarySensor(CoordinatorEntity, BinarySensorEntity):
         return _device_info(self._insee)
 
     @property
+    def available(self) -> bool:
+        return super().available and self.coordinator.data.get(self._day, {}).get("episode") is not None
+
+    @property
     def is_on(self) -> bool:
         return bool(self.coordinator.data.get(self._day, {}).get("episode"))

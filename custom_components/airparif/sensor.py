@@ -161,5 +161,9 @@ class AirparifApiVersionSensor(CoordinatorEntity, SensorEntity):
         return _device_info(self._insee)
 
     @property
+    def available(self) -> bool:
+        return super().available and self.coordinator.data.get("version") is not None
+
+    @property
     def native_value(self):
         return self.coordinator.data.get("version")

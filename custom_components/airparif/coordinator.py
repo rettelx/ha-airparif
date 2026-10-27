@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from collections.abc import Awaitable
 from datetime import date, timedelta
 
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
@@ -12,6 +13,21 @@ from .api import AirparifApiClient
 from .const import DAY_TODAY, DAY_TOMORROW
 
 _LOGGER = logging.getLogger(__name__)
+
+
+async def _optional[T](name: str, request: Awaitable[T]) -> T | None:
+    """Return None instead of raising, so only this request's entities go unavailable."""
+    try:
+        return await request
+    except Exception as err:
+        _LOGGER.warning("Airparif %s request failed: %s", name, err)
+        return None
+
+
+def _episode_active(episodes: dict | None, day_key: str) -> bool | None:
+    if episodes is None:
+        return None
+    return bool(episodes.get(day_key, {}).get("actif"))
 
 
 class AirparifCoordinator(DataUpdateCoordinator[dict]):
@@ -31,8 +47,8 @@ class AirparifCoordinator(DataUpdateCoordinator[dict]):
         try:
             previsions, episodes, version = await asyncio.gather(
                 self.client.get_previsions(self.insee),
-                self.client.get_episodes(),
-                self.client.get_version(),
+                _optional("episodes", self.client.get_episodes()),
+                _optional("version", self.client.get_version()),
             )
         except Exception as err:
             raise UpdateFailed(str(err)) from err
@@ -55,6 +71,6 @@ class AirparifCoordinator(DataUpdateCoordinator[dict]):
 
         return {
             "version": version,
-            DAY_TODAY: {**today, "episode": bool(episodes.get("jour", {}).get("actif"))},
-            DAY_TOMORROW: {**tomorrow, "episode": bool(episodes.get("demain", {}).get("actif"))},
+            DAY_TODAY: {**today, "episode": _episode_active(episodes, "jour")},
+            DAY_TOMORROW: {**tomorrow, "episode": _episode_active(episodes, "demain")},
         }
